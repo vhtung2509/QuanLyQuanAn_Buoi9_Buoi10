@@ -15,6 +15,8 @@ namespace QuanLyQuanAn.Data
         public DbSet<NhanVien> NhanVien { get; set; }
         public DbSet<NguyenLieu> NguyenLieu { get; set; }
         public DbSet<KhachHang> KhachHang { get; set; }
+        public virtual DbSet<HoaDon> HoaDon { get; set; }
+        public virtual DbSet<HoaDon_ChiTiet> HoaDon_ChiTiet { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
