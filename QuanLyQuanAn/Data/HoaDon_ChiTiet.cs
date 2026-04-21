@@ -13,17 +13,14 @@ namespace QuanLyQuanAn.Data
 
         public int HoaDonID { get; set; }
 
-        // Đã đổi từ SanPhamID sang MonAnID cho đúng đồ án Quán ăn
         public int MonAnID { get; set; }
 
         public short SoLuongBan { get; set; }
 
         public int DonGiaBan { get; set; }
 
-        // Liên kết tới Hóa đơn chính
         public virtual HoaDon HoaDon { get; set; } = null!;
 
-        // Liên kết tới bảng Món ăn
         [ForeignKey("MonAnID")]
         public virtual MonAn MonAn { get; set; } = null!;
     }

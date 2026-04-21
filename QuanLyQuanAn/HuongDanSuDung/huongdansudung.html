@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <title>Hướng dẫn sử dụng - Quản lý Quán ăn</title>
+    <style>
+        body { scroll-behavior: smooth; }
+        .sidebar { position: sticky; top: 20px; height: fit-content; }
+        .card-header { background-color: #0d6efd; color: white; font-weight: bold; }
+        h4 { color: #0d6efd; border-left: 5px solid #0d6efd; padding-left: 10px; margin-top: 30px; }
+        .step-box { background: #f8f9fa; border-radius: 8px; padding: 15px; margin-bottom: 15px; border-left: 4px solid #198754; }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="sidebar list-group shadow-sm">
+                    <a href="#tongquan" class="list-group-item list-group-item-action active">1. Tổng quan</a>
+                    <a href="#hethong" class="list-group-item list-group-item-action">2. Hệ thống</a>
+                    <a href="#quanly" class="list-group-item list-group-item-action">3. Danh mục Quản lý</a>
+                    <a href="#nghiepvu" class="list-group-item list-group-item-action">4. Nghiệp vụ Bán hàng & Nhập kho</a>
+                    <a href="#baocao" class="list-group-item list-group-item-action">5. Báo cáo - Thống kê</a>
+                    <a href="#nhapxuat" class="list-group-item list-group-item-action bg-warning text-dark">6. Hướng dẫn Nhập/Xuất Excel</a>
+                </div>
+            </div>
+
+            <div class="col-md-9">
+                <div class="card shadow">
+                    <div class="card-header text-center fs-4">TÀI LIỆU HƯỚNG DẪN SỬ DỤNG PHẦN MỀM QUẢN LÝ QUÁN ĂN</div>
+                    <div class="card-body">
+                        
+                        <h4 id="tongquan">1. Tổng quan</h4>
+                        <p>Phần mềm giúp tối ưu hóa quy trình quản lý quán ăn, từ khâu quản lý nguyên liệu, thực đơn đến việc phục vụ khách hàng và báo cáo doanh thu cuối ngày.</p>
+
+                        <h4 id="hethong">2. Phân hệ Hệ thống</h4>
+                        <div class="step-box">
+                            <p><strong>Đăng nhập/Đăng xuất:</strong> Người dùng sử dụng tài khoản được cấp để truy cập vào hệ thống. Sau khi xong việc nên Đăng xuất để bảo mật dữ liệu.</p>
+                            <p><strong>Đổi mật khẩu:</strong> Chức năng giúp người dùng tự bảo vệ tài khoản cá nhân.</p>
+                            <p><strong>Thoát:</strong> Đóng hoàn toàn phần mềm (Phím tắt ALT + F4).</p>
+                        </div>
+
+                        <h4 id="quanly">3. Danh mục Quản lý (Dữ liệu nền)</h4>
+                        <p>Đây là nơi thiết lập dữ liệu ban đầu cho quán ăn. Các màn hình có thao tác tương tự nhau:</p>
+                        <ul>
+                            <li><strong>Loại món ăn & Món ăn:</strong> Thiết lập thực đơn cho quán.</li>
+                            <li><strong>Đặt bàn:</strong> Quản lý sơ đồ bàn và trạng thái bàn (Trống/Có khách).</li>
+                            <li><strong>Nguyên liệu & Công thức:</strong> Quản lý kho nguyên liệu thô và định lượng cho từng món ăn.</li>
+                            <li><strong>Nhân viên & Khách hàng:</strong> Lưu trữ thông tin liên lạc và quản lý hồ sơ.</li>
+                            <li><strong>Nhà cung cấp:</strong> Danh sách các đơn vị cung cấp nguyên liệu đầu vào.</li>
+                        </ul>
+
+                        <h4 id="nghiepvu">4. Nghiệp vụ Bán hàng & Nhập kho</h4>
+                        <div class="step-box">
+                            <strong>Hóa đơn bán hàng:</strong> Dùng khi thanh toán cho khách. Hệ thống sẽ tự động tính tổng tiền dựa trên các món khách đã gọi.
+                        </div>
+                        <div class="step-box">
+                            <strong>Phiếu nhập & Chi tiết phiếu nhập:</strong> Sử dụng khi nhập thêm nguyên liệu vào kho. Dữ liệu này sẽ làm cơ sở để tính toán chi phí đầu vào.
+                        </div>
+
+                        <h4 id="baocao">5. Báo cáo - Thống kê</h4>
+                        <p>Hệ thống tự động tổng hợp số liệu từ các hóa đơn và phiếu nhập:</p>
+                        <ul>
+                            <li><strong>Thống kê món ăn:</strong> Xem món nào bán chạy nhất để có kế hoạch nhập hàng.</li>
+                            <li><strong>Thống kê doanh thu:</strong> Theo dõi tiền thu về theo ngày/tháng/năm.</li>
+                            <li><strong>Thống kê phiếu nhập:</strong> Theo dõi lượng vốn đã chi ra để nhập hàng.</li>
+                        </ul>
+
+                        <hr />
+
+                        <h4 id="nhapxuat" class="text-danger">6. Hướng dẫn thao tác Nhập/Xuất Excel (Chung cho toàn bộ app)</h4>
+                        <div class="alert alert-info">
+                            Tùng chú ý: Tất cả các màn hình Quản lý (Nhân viên, Món ăn, Khách hàng...) đều áp dụng quy trình này.
+                        </div>
+                        
+                        <h5>A. Xuất dữ liệu ra Excel</h5>
+                        <p><strong>Bước 1:</strong> Tại màn hình danh sách, nhấn nút <strong>"Xuất Excel"</strong>.</p>
+                        <p><strong>Bước 2:</strong> Chọn vị trí lưu file trên máy tính và đặt tên file.</p>
+                        <p><strong>Bước 3:</strong> Nhấn Save. Hệ thống sẽ tự động chuyển toàn bộ dữ liệu đang hiển thị trên bảng vào file Excel.</p>
+
+                        <h5>B. Nhập dữ liệu từ Excel</h5>
+                        <p><strong>Bước 1:</strong> Nhấn nút <strong>"Nhập Excel"</strong>.</p>
+                        <p><strong>Bước 2:</strong> Chọn file Excel chứa dữ liệu (Lưu ý: Các cột trong file Excel phải đúng thứ tự như trên phần mềm).</p>
+                        <p><strong>Bước 3:</strong> Hệ thống sẽ đọc dữ liệu và hiển thị lên bảng. Kiểm tra lại và nhấn <strong>"Lưu"</strong> để hoàn tất.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="text-center mt-5 mb-4 text-muted">
+        &copy; 2026 - Đồ án Quản lý Quán ăn - Vương Hải Tùng
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

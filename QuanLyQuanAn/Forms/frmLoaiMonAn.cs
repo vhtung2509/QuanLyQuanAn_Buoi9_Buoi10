@@ -14,13 +14,15 @@ namespace QuanLyQuanAn.Forms
 {
     public partial class frmLoaiMonAn : Form
     {
-        QLQADbcontext context = new QLQADbcontext(); // Khởi tạo biến ngữ cảnh CSDL
-        bool xuLyThem = false; // Kiểm tra có nhấn vào nút Thêm hay không?
-        int id; // Lấy mã loại món ăn (dùng cho Sửa và Xóa)
+        QLQADbcontext context = new QLQADbcontext();
+        bool xuLyThem = false;
+        int id;
+
         public frmLoaiMonAn()
         {
             InitializeComponent();
         }
+
         private void BatTatChucNang(bool giaTri)
         {
             btnLuu.Enabled = giaTri;
@@ -30,23 +32,50 @@ namespace QuanLyQuanAn.Forms
             btnThem.Enabled = !giaTri;
             btnSua.Enabled = !giaTri;
             btnXoa.Enabled = !giaTri;
+            btnNhap.Enabled = !giaTri;
+            btnXuat.Enabled = !giaTri;
         }
 
         private void frmLoaiMonAn_Load(object sender, EventArgs e)
         {
             BatTatChucNang(false);
+            LoadDanhSachLoaiMonAn();
+        }
 
-            List<LoaiMonAn> lma = new List<LoaiMonAn>();
-            lma = context.LoaiMonAn.ToList();
+        // TỐI ƯU 1: Tách hàm Load dữ liệu riêng cho code sạch đẹp
+        private void LoadDanhSachLoaiMonAn()
+        {
+            try
+            {
+                context.ChangeTracker.Clear(); // Xóa cache để luôn lấy dữ liệu mới nhất
+                var lma = context.LoaiMonAn.ToList();
 
-            BindingSource bindingSource = new BindingSource();
-            bindingSource.DataSource = lma;
+                BindingSource bindingSource = new BindingSource();
+                bindingSource.DataSource = lma;
 
-            txtTenLoai.DataBindings.Clear();
-            // Tên thuộc tính vẫn là "TenLoai" giống trong class LoaiMonAn của bạn
-            txtTenLoai.DataBindings.Add("Text", bindingSource, "TenLoai", false, DataSourceUpdateMode.Never);
+                txtTenLoai.DataBindings.Clear();
+                txtTenLoai.DataBindings.Add("Text", bindingSource, "TenLoai", false, DataSourceUpdateMode.Never);
 
-            dataGridView.DataSource = bindingSource;
+                dataGridView.DataSource = bindingSource;
+                DinhDangLuoi();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi tải dữ liệu: " + ex.Message);
+            }
+        }
+
+        private void DinhDangLuoi()
+        {
+            if (dataGridView.Columns.Count >= 2)
+            {
+                dataGridView.Columns[0].DataPropertyName = "ID";
+                dataGridView.Columns[1].DataPropertyName = "TenLoai";
+
+                dataGridView.Columns[0].HeaderText = "Mã Loại";
+                dataGridView.Columns[1].HeaderText = "Tên Loại Món Ăn";
+            }
+            dataGridView.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         }
 
         private void btnThem_Click(object sender, EventArgs e)
@@ -54,36 +83,50 @@ namespace QuanLyQuanAn.Forms
             xuLyThem = true;
             BatTatChucNang(true);
             txtTenLoai.Clear();
+            txtTenLoai.Focus();
         }
 
         private void btnSua_Click(object sender, EventArgs e)
         {
+            if (dataGridView.CurrentRow == null) return;
             xuLyThem = false;
             BatTatChucNang(true);
-            id = Convert.ToInt32(dataGridView.CurrentRow.Cells["ID"].Value.ToString());
+            id = Convert.ToInt32(dataGridView.CurrentRow.Cells[0].Value.ToString());
+            txtTenLoai.Focus();
         }
 
         private void btnXoa_Click(object sender, EventArgs e)
         {
-            if (MessageBox.Show("Xác nhận xóa loại món ăn này?", "Xóa", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            if (dataGridView.CurrentRow == null) return;
+            string tenLoai = txtTenLoai.Text;
+
+            if (MessageBox.Show("Xác nhận xóa loại món ăn '" + tenLoai + "'?", "Xóa", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
-                id = Convert.ToInt32(dataGridView.CurrentRow.Cells["ID"].Value.ToString());
-
-                LoaiMonAn lma = context.LoaiMonAn.Find(id);
-
-                if (lma != null)
+                // TỐI ƯU 2: Bọc Try-Catch để chống văng phần mềm khi loại món ăn đang được sử dụng
+                try
                 {
-                    context.LoaiMonAn.Remove(lma);
-                }
-                context.SaveChanges();
+                    id = Convert.ToInt32(dataGridView.CurrentRow.Cells[0].Value.ToString());
+                    LoaiMonAn lma = context.LoaiMonAn.Find(id);
 
-                frmLoaiMonAn_Load(sender, e);
+                    if (lma != null)
+                    {
+                        context.LoaiMonAn.Remove(lma);
+                        context.SaveChanges();
+                        MessageBox.Show("Đã xóa loại món ăn thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    LoadDanhSachLoaiMonAn();
+                }
+                catch (Exception)
+                {
+                    MessageBox.Show("Không thể xóa Loại món ăn này vì đang có Món ăn thuộc loại này trong thực đơn!", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
             }
         }
 
         private void btnHuyBo_Click(object sender, EventArgs e)
         {
-            frmLoaiMonAn_Load(sender, e);
+            BatTatChucNang(false);
+            LoadDanhSachLoaiMonAn();
         }
 
         private void btnThoat_Click(object sender, EventArgs e)
@@ -97,30 +140,52 @@ namespace QuanLyQuanAn.Forms
 
         private void btnLuu_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtTenLoai.Text))
-                MessageBox.Show("Vui lòng nhập tên loại món ăn?", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            else
+            string tenMoi = txtTenLoai.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(tenMoi))
             {
+                MessageBox.Show("Vui lòng nhập tên loại món ăn!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                txtTenLoai.Focus();
+                return;
+            }
+
+            try
+            {
+                // TỐI ƯU 3: Ràng buộc không cho nhập trùng tên Loại Món Ăn
+                bool trungTen = xuLyThem ? context.LoaiMonAn.Any(l => l.TenLoai.ToLower() == tenMoi.ToLower())
+                                         : context.LoaiMonAn.Any(l => l.TenLoai.ToLower() == tenMoi.ToLower() && l.ID != id);
+                if (trungTen)
+                {
+                    MessageBox.Show("Tên loại món ăn này đã tồn tại! Vui lòng nhập tên khác.", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    txtTenLoai.Focus();
+                    return;
+                }
+
                 if (xuLyThem)
                 {
                     LoaiMonAn lma = new LoaiMonAn();
-                    lma.TenLoai = txtTenLoai.Text;
+                    lma.TenLoai = tenMoi;
                     context.LoaiMonAn.Add(lma);
-
-                    context.SaveChanges();
                 }
                 else
                 {
                     LoaiMonAn lma = context.LoaiMonAn.Find(id);
                     if (lma != null)
                     {
-                        lma.TenLoai = txtTenLoai.Text;
+                        lma.TenLoai = tenMoi;
                         context.LoaiMonAn.Update(lma);
-
-                        context.SaveChanges();
                     }
                 }
-                frmLoaiMonAn_Load(sender, e);
+
+                context.SaveChanges();
+                MessageBox.Show("Lưu loại món ăn thành công!", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                BatTatChucNang(false);
+                LoadDanhSachLoaiMonAn();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khi lưu dữ liệu: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -165,24 +230,24 @@ namespace QuanLyQuanAn.Forms
 
                         if (table.Rows.Count > 0)
                         {
-                            int dem = 0;
+                            int demThanhCong = 0;
                             foreach (DataRow r in table.Rows)
                             {
-                                LoaiMonAn lma = new LoaiMonAn();
-                                // Lấy dữ liệu từ cột có chữ "TenLoai" trong Excel
-                                lma.TenLoai = table.Columns.Contains("TenLoai") ? r["TenLoai"].ToString() : "";
+                                string tenExcel = table.Columns.Contains("TenLoai") ? r["TenLoai"].ToString().Trim() : "";
 
-                                // Chỉ lưu nếu tên loại không bị rỗng
-                                if (!string.IsNullOrWhiteSpace(lma.TenLoai))
+                                // TỐI ƯU 4: Chống nạp rỗng và chống nạp trùng tên loại từ file Excel
+                                if (!string.IsNullOrWhiteSpace(tenExcel) && !context.LoaiMonAn.Any(l => l.TenLoai.ToLower() == tenExcel.ToLower()))
                                 {
+                                    LoaiMonAn lma = new LoaiMonAn();
+                                    lma.TenLoai = tenExcel;
                                     context.LoaiMonAn.Add(lma);
-                                    dem++;
+                                    demThanhCong++;
                                 }
                             }
                             context.SaveChanges();
 
-                            MessageBox.Show("Đã nhập thành công " + dem + " loại món ăn.", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            frmLoaiMonAn_Load(sender, e);
+                            MessageBox.Show($"Đã nạp thành công {demThanhCong} loại món ăn mới.\n(Bỏ qua các loại đã tồn tại hoặc bị rỗng)", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            LoadDanhSachLoaiMonAn();
                         }
                     }
                 }
@@ -195,6 +260,12 @@ namespace QuanLyQuanAn.Forms
 
         private void btnXuat_Click(object sender, EventArgs e)
         {
+            if (dataGridView.Rows.Count == 0)
+            {
+                MessageBox.Show("Không có dữ liệu để xuất!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             SaveFileDialog saveFileDialog = new SaveFileDialog();
             saveFileDialog.Title = "Xuất danh sách loại món ăn ra Excel";
             saveFileDialog.Filter = "Excel Files|*.xlsx";
@@ -204,25 +275,22 @@ namespace QuanLyQuanAn.Forms
             {
                 try
                 {
-                    // Tạo DataTable để chứa dữ liệu xuất
                     DataTable table = new DataTable();
                     table.Columns.AddRange(new DataColumn[] {
                         new DataColumn("ID", typeof(int)),
                         new DataColumn("TenLoai", typeof(string))
                     });
 
-                    // Lấy dữ liệu từ database
                     var danhSach = context.LoaiMonAn.ToList();
                     foreach (var lma in danhSach)
                     {
                         table.Rows.Add(lma.ID, lma.TenLoai);
                     }
 
-                    // Sử dụng ClosedXML để ghi file
                     using (XLWorkbook wb = new XLWorkbook())
                     {
                         var sheet = wb.Worksheets.Add(table, "LoaiMonAn");
-                        sheet.Columns().AdjustToContents(); // Tự động căn chỉnh độ rộng cột
+                        sheet.Columns().AdjustToContents();
                         wb.SaveAs(saveFileDialog.FileName);
 
                         MessageBox.Show("Xuất dữ liệu thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);

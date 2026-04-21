@@ -17,10 +17,12 @@ namespace QuanLyQuanAn.Forms
         QLQADbcontext context = new QLQADbcontext(); // Khởi tạo biến ngữ cảnh CSDL
         bool XuLyThem = false; // Kiểm tra có nhấn vào nút Thêm hay không?
         int id; // Lấy mã khách hàng (dùng cho Sửa và Xóa)
+
         public frmKhachHang()
         {
             InitializeComponent();
         }
+
         private void BatTatChucNang(bool giaTri)
         {
             btnLuu.Enabled = giaTri;
@@ -35,31 +37,76 @@ namespace QuanLyQuanAn.Forms
             btnTimKiem.Enabled = !giaTri;
             btnNhap.Enabled = !giaTri;
             btnXuat.Enabled = !giaTri;
-
         }
+
         private void frmKhachHang_Load(object sender, EventArgs e)
         {
             BatTatChucNang(false);
+            dataGridView.AutoGenerateColumns = false;
+            HienThiDuLieuLenLuoi(); // Gọi hàm load tối ưu
+        }
 
-            //Thêm <KhachHang> vào List
-            List<KhachHang> kh = new List<KhachHang>();
-            kh = context.KhachHang.ToList();
+        // TỐI ƯU: GỘP CHUNG HÀM LOAD DỮ LIỆU VÀ TÌM KIẾM
+        private void HienThiDuLieuLenLuoi(string tuKhoa = "")
+        {
+            try
+            {
+                context.ChangeTracker.Clear(); // Xóa cache, lấy data mới nhất
 
-            BindingSource bindingSource = new BindingSource();
-            bindingSource.DataSource = kh;
+                var query = context.KhachHang.AsQueryable();
 
-            txtHoVaTen.DataBindings.Clear();
-            txtHoVaTen.DataBindings.Add("Text", bindingSource, "HoVaTen", false, DataSourceUpdateMode.Never);
+                if (!string.IsNullOrWhiteSpace(tuKhoa))
+                {
+                    tuKhoa = tuKhoa.ToLower();
+                    query = query.Where(kh => kh.HoVaTen.ToLower().Contains(tuKhoa) || kh.DienThoai.Contains(tuKhoa));
+                }
 
-            //Bổ sung DataBindings cho txtDienThoai
-            txtDienThoai.DataBindings.Clear();
-            txtDienThoai.DataBindings.Add("Text", bindingSource, "DienThoai", false, DataSourceUpdateMode.Never);
+                // Sắp xếp khách hàng mới nhất lên đầu
+                var kh = query.OrderBy(k => k.ID).ToList();
 
-            //Bổ sung DataBindings cho txtDiaChi
-            txtDiaChi.DataBindings.Clear();
-            txtDiaChi.DataBindings.Add("Text", bindingSource, "DiaChi", false, DataSourceUpdateMode.Never);
+                if (kh.Count == 0 && !string.IsNullOrWhiteSpace(tuKhoa))
+                {
+                    MessageBox.Show("Không tìm thấy khách hàng nào khớp với từ khóa!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    HienThiDuLieuLenLuoi(""); // Trả về toàn bộ danh sách
+                    return;
+                }
 
-            dataGridView.DataSource = bindingSource;
+                BindingSource bindingSource = new BindingSource();
+                bindingSource.DataSource = kh;
+
+                txtHoVaTen.DataBindings.Clear();
+                txtHoVaTen.DataBindings.Add("Text", bindingSource, "HoVaTen", false, DataSourceUpdateMode.Never);
+
+                txtDienThoai.DataBindings.Clear();
+                txtDienThoai.DataBindings.Add("Text", bindingSource, "DienThoai", false, DataSourceUpdateMode.Never);
+
+                txtDiaChi.DataBindings.Clear();
+                txtDiaChi.DataBindings.Add("Text", bindingSource, "DiaChi", false, DataSourceUpdateMode.Never);
+
+                dataGridView.DataSource = bindingSource;
+                DinhDangLuoi();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi tải dữ liệu: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void DinhDangLuoi()
+        {
+            if (dataGridView.Columns.Count >= 4)
+            {
+                dataGridView.Columns[0].DataPropertyName = "ID";
+                dataGridView.Columns[1].DataPropertyName = "HoVaTen";
+                dataGridView.Columns[2].DataPropertyName = "DienThoai";
+                dataGridView.Columns[3].DataPropertyName = "DiaChi";
+
+                dataGridView.Columns[0].HeaderText = "Mã KH";
+                dataGridView.Columns[1].HeaderText = "Họ và Tên";
+                dataGridView.Columns[2].HeaderText = "Số điện thoại";
+                dataGridView.Columns[3].HeaderText = "Địa chỉ";
+            }
+            dataGridView.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         }
 
         private void btnThem_Click(object sender, EventArgs e)
@@ -69,66 +116,111 @@ namespace QuanLyQuanAn.Forms
             txtHoVaTen.Clear();
             txtDiaChi.Clear();
             txtDienThoai.Clear();
+            txtHoVaTen.Focus();
         }
+
         private void btnSua_Click(object sender, EventArgs e)
         {
+            if (dataGridView.CurrentRow == null) return;
             XuLyThem = false;
             BatTatChucNang(true);
             id = Convert.ToInt32(dataGridView.CurrentRow.Cells["ID"].Value.ToString());
+            txtHoVaTen.Focus();
         }
 
         private void btnXoa_Click(object sender, EventArgs e)
         {
+            if (dataGridView.CurrentRow == null) return;
+
             if (MessageBox.Show("Xác nhận xóa khách hàng " + txtHoVaTen.Text + "?", "Xóa", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
-                id = Convert.ToInt32(dataGridView.CurrentRow.Cells["ID"].Value.ToString());
-                KhachHang kh = context.KhachHang.Find(id);
-                if (kh != null)
+                try
                 {
-                    context.KhachHang.Remove(kh);
+                    id = Convert.ToInt32(dataGridView.CurrentRow.Cells["ID"].Value.ToString());
+                    KhachHang kh = context.KhachHang.Find(id);
+                    if (kh != null)
+                    {
+                        context.KhachHang.Remove(kh);
+                        context.SaveChanges();
+                        MessageBox.Show("Đã xóa khách hàng thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    HienThiDuLieuLenLuoi();
                 }
-                context.SaveChanges();
-
-                frmKhachHang_Load(sender, e);
+                catch (Exception)
+                {
+                    // TỐI ƯU: Bẫy lỗi không cho xóa khách hàng đã có hóa đơn
+                    MessageBox.Show("Không thể xóa khách hàng này vì đã có dữ liệu Hóa đơn hoặc Đặt bàn liên quan!", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
             }
         }
+
         private void btnLuu_Click(object sender, EventArgs e)
         {
+            string hoTen = txtHoVaTen.Text.Trim();
+            string sdt = txtDienThoai.Text.Trim();
 
-            if (string.IsNullOrWhiteSpace(txtHoVaTen.Text))
-                MessageBox.Show("Vui lòng nhập họ và tên khách hàng?", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            else
+            // TỐI ƯU: Ràng buộc nhập liệu chặt chẽ
+            if (string.IsNullOrWhiteSpace(hoTen))
             {
+                MessageBox.Show("Vui lòng nhập họ và tên khách hàng!", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtHoVaTen.Focus();
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(sdt) || sdt.Length < 10)
+            {
+                MessageBox.Show("Vui lòng nhập Số điện thoại hợp lệ (từ 10 số trở lên)!", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtDienThoai.Focus();
+                return;
+            }
+
+            try
+            {
+                // TỐI ƯU: Kiểm tra trùng lặp Số điện thoại (Chỉ kiểm tra những khách khác ID hiện tại nếu đang sửa)
+                bool trungSDT = XuLyThem ? context.KhachHang.Any(k => k.DienThoai == sdt)
+                                         : context.KhachHang.Any(k => k.DienThoai == sdt && k.ID != id);
+                if (trungSDT)
+                {
+                    MessageBox.Show("Số điện thoại này đã tồn tại trong hệ thống! Vui lòng kiểm tra lại.", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    txtDienThoai.Focus();
+                    return;
+                }
+
                 if (XuLyThem)
                 {
                     KhachHang kh = new KhachHang();
-                    kh.HoVaTen = txtHoVaTen.Text;
-                    kh.DienThoai = txtDienThoai.Text;
-                    kh.DiaChi = txtDiaChi.Text;
+                    kh.HoVaTen = hoTen;
+                    kh.DienThoai = sdt;
+                    kh.DiaChi = txtDiaChi.Text.Trim();
                     context.KhachHang.Add(kh);
-
-                    context.SaveChanges();
                 }
                 else
                 {
                     KhachHang kh = context.KhachHang.Find(id);
                     if (kh != null)
                     {
-                        kh.HoVaTen = txtHoVaTen.Text;
-                        kh.DienThoai = txtDienThoai.Text;
-                        kh.DiaChi = txtDiaChi.Text;
+                        kh.HoVaTen = hoTen;
+                        kh.DienThoai = sdt;
+                        kh.DiaChi = txtDiaChi.Text.Trim();
                         context.KhachHang.Update(kh);
-
-                        context.SaveChanges();
                     }
                 }
 
-                frmKhachHang_Load(sender, e);
+                context.SaveChanges();
+                MessageBox.Show("Lưu thông tin khách hàng thành công!", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                BatTatChucNang(false);
+                HienThiDuLieuLenLuoi();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khi lưu dữ liệu: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
         private void btnHuyBo_Click(object sender, EventArgs e)
         {
-            frmKhachHang_Load(sender, e);
+            BatTatChucNang(false);
+            HienThiDuLieuLenLuoi();
         }
 
         private void btnThoat_Click(object sender, EventArgs e)
@@ -142,28 +234,8 @@ namespace QuanLyQuanAn.Forms
 
         private void btnTimKiem_Click(object sender, EventArgs e)
         {
-            // Lấy từ khóa và chuyển về chữ thường để dễ tìm kiếm
-            string tuKhoa = txtHoVaTen.Text.Trim().ToLower();
-
-            // Lọc danh sách trong Database
-            List<KhachHang> ketQua = context.KhachHang
-                .Where(kh => kh.HoVaTen.ToLower().Contains(tuKhoa) || kh.DienThoai.Contains(tuKhoa))
-                .ToList();
-
-            // Cập nhật lại DataGridView với danh sách kết quả
-            BindingSource bindingSource = new BindingSource();
-            bindingSource.DataSource = ketQua;
-
-            txtHoVaTen.DataBindings.Clear();
-            txtHoVaTen.DataBindings.Add("Text", bindingSource, "HoVaTen", false, DataSourceUpdateMode.Never);
-
-            txtDienThoai.DataBindings.Clear();
-            txtDienThoai.DataBindings.Add("Text", bindingSource, "DienThoai", false, DataSourceUpdateMode.Never);
-
-            txtDiaChi.DataBindings.Clear();
-            txtDiaChi.DataBindings.Add("Text", bindingSource, "DiaChi", false, DataSourceUpdateMode.Never);
-
-            dataGridView.DataSource = bindingSource;
+            string tuKhoa = txtHoVaTen.Text.Trim();
+            HienThiDuLieuLenLuoi(tuKhoa);
         }
 
         private void btnNhap_Click(object sender, EventArgs e)
@@ -190,7 +262,7 @@ namespace QuanLyQuanAn.Forms
                             {
                                 readRange = string.Format("{0}:{1}", 1, row.LastCellUsed().Address.ColumnNumber);
                                 foreach (IXLCell cell in row.Cells(readRange))
-                                    table.Columns.Add(cell.Value.ToString());
+                                    table.Columns.Add(cell.Value.ToString().Trim());
                                 firstRow = false;
                             }
                             else
@@ -207,29 +279,43 @@ namespace QuanLyQuanAn.Forms
 
                         if (table.Rows.Count > 0)
                         {
+                            int demThanhCong = 0;
                             foreach (DataRow r in table.Rows)
                             {
-                                KhachHang kh = new KhachHang
+                                string sdtExcel = r["DienThoai"].ToString().Trim();
+
+                                // TỐI ƯU: Kiểm tra trước khi nạp để chống nạp trùng khách hàng cũ
+                                if (!context.KhachHang.Any(k => k.DienThoai == sdtExcel))
                                 {
-                                    HoVaTen = r["HoVaTen"].ToString(),
-                                    DienThoai = r["DienThoai"].ToString(),
-                                    DiaChi = r["DiaChi"].ToString()
-                                };
-                                context.KhachHang.Add(kh);
+                                    KhachHang kh = new KhachHang
+                                    {
+                                        HoVaTen = r["HoVaTen"].ToString().Trim(),
+                                        DienThoai = sdtExcel,
+                                        DiaChi = r["DiaChi"].ToString().Trim()
+                                    };
+                                    context.KhachHang.Add(kh);
+                                    demThanhCong++;
+                                }
                             }
                             context.SaveChanges();
 
-                            MessageBox.Show("Đã nhập thành công " + table.Rows.Count + " khách hàng.", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            frmKhachHang_Load(sender, e);
+                            MessageBox.Show($"Đã nạp thành công {demThanhCong} khách hàng mới.\n(Bỏ qua các số điện thoại đã tồn tại)", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            HienThiDuLieuLenLuoi();
                         }
                     }
                 }
-                catch (Exception ex) { MessageBox.Show("Lỗi: " + ex.Message); }
+                catch (Exception ex) { MessageBox.Show("Lỗi nạp Excel: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error); }
             }
         }
 
         private void btnXuat_Click(object sender, EventArgs e)
         {
+            if (dataGridView.Rows.Count == 0)
+            {
+                MessageBox.Show("Không có dữ liệu để xuất!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             SaveFileDialog saveFileDialog = new SaveFileDialog();
             saveFileDialog.Title = "Xuất danh sách khách hàng ra Excel";
             saveFileDialog.Filter = "Excel Files|*.xlsx";
@@ -239,7 +325,6 @@ namespace QuanLyQuanAn.Forms
             {
                 try
                 {
-                    // Tạo DataTable để chứa dữ liệu xuất
                     DataTable table = new DataTable();
                     table.Columns.AddRange(new DataColumn[] {
                         new DataColumn("ID", typeof(int)),
@@ -248,18 +333,17 @@ namespace QuanLyQuanAn.Forms
                         new DataColumn("DiaChi", typeof(string))
                     });
 
-                    // Lấy dữ liệu từ database
-                    var danhSach = context.KhachHang.ToList();
+                    // Lấy dữ liệu mới nhất
+                    var danhSach = context.KhachHang.OrderBy(k => k.ID).ToList();
                     foreach (var kh in danhSach)
                     {
                         table.Rows.Add(kh.ID, kh.HoVaTen, kh.DienThoai, kh.DiaChi);
                     }
 
-                    // Sử dụng ClosedXML để ghi file
                     using (XLWorkbook wb = new XLWorkbook())
                     {
                         var sheet = wb.Worksheets.Add(table, "KhachHang");
-                        sheet.Columns().AdjustToContents(); // Tự động căn chỉnh độ rộng cột
+                        sheet.Columns().AdjustToContents();
                         wb.SaveAs(saveFileDialog.FileName);
 
                         MessageBox.Show("Xuất dữ liệu thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -269,6 +353,14 @@ namespace QuanLyQuanAn.Forms
                 {
                     MessageBox.Show("Lỗi khi xuất Excel: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
+            }
+        }
+
+        private void txtDienThoai_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar))
+            {
+                e.Handled = true; // Chặn phím không phải là số
             }
         }
     }

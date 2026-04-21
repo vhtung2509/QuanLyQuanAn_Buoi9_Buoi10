@@ -78,8 +78,8 @@ namespace QuanLyQuanAn.Reports
             reportViewer.ZoomMode = ZoomMode.Percent;
             reportViewer.ZoomPercent = 100;
 
-            //Thêm vào để lọc
-            ReportParameter reportParameter = new ReportParameter("MoTaKetQuaLoc", "(Tất cả món ăn)");
+            // ĐÃ ĐỔI DÒNG CHỮ Ở ĐÂY (Lúc mới mở Form)
+            ReportParameter reportParameter = new ReportParameter("MoTaKetQuaLoc", "Hiển thị tất cả các món ăn đã bán trong hệ thống");
             reportViewer.LocalReport.SetParameters(reportParameter);
 
             reportViewer.RefreshReport();
@@ -109,8 +109,8 @@ namespace QuanLyQuanAn.Reports
                 moTaTimKiem = " | Tìm kiếm: '" + txtTrangThai.Text + "'";
             }
 
-            // 4. Ghép dòng chữ hiển thị lên Report cho logic
-            string moTaChung = "(Tất cả món ăn)";
+            // 4. Ghép dòng chữ hiển thị lên Report cho logic (ĐÃ ĐỔI DÒNG CHỮ Ở ĐÂY)
+            string moTaChung = "Hiển thị tất cả các món ăn đã bán trong hệ thống";
             if (moTaLoai != "" || moTaTimKiem != "")
             {
                 // Nếu chỉ tìm kiếm mà không chọn loại món, thì bỏ cái dấu " | " ở đầu đi cho đẹp

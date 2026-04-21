@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,6 +22,7 @@ namespace QuanLyQuanAn.Forms
         int id;
         bool xuLyThem = false;
         string imagesFolder = Application.StartupPath.Replace("bin\\Debug\\net8.0-windows", "Images");
+
         public frmMonAn()
         {
             InitializeComponent();
@@ -45,7 +47,6 @@ namespace QuanLyQuanAn.Forms
             btnDoiAnh.Enabled = giaTri;
             btnXoayAnh.Enabled = giaTri;
 
-
             btnTimKiem.Enabled = !giaTri;
             btnNhap.Enabled = !giaTri;
             btnXuat.Enabled = !giaTri;
@@ -62,90 +63,128 @@ namespace QuanLyQuanAn.Forms
         {
             BatTatChucNang(false);
             LayLoaiMonAnVaoComboBox();
-
             dataGridView.AutoGenerateColumns = false;
 
-            // Load danh sách món ăn từ DB lên ViewModel
-            List<DanhSachMonAn> sp = new List<DanhSachMonAn>();
-            sp = context.MonAn.Select(r => new DanhSachMonAn
+            HienThiDuLieuLenLuoi(); // Gọi hàm Load tối ưu
+        }
+
+        // =========================================================
+        // TỐI ƯU 4: GỘP CHUNG HÀM LOAD DỮ LIỆU VÀ TÌM KIẾM
+        // =========================================================
+        private void HienThiDuLieuLenLuoi(string tuKhoa = "")
+        {
+            try
             {
-                ID = r.ID,
-                LoaiMonAnID = r.LoaiMonAnID,
-                TenLoai = r.LoaiMonAn.TenLoai,
-                TenMonAn = r.TenMon,
-                SoLuong = r.SoLuong,
-                DonGia = r.DonGia,
-                MoTa = r.MoTa,
-                HinhAnh = r.HinhAnh
-            }).ToList();
+                context.ChangeTracker.Clear();
 
-            BindingSource bindingSource = new BindingSource();
-            bindingSource.DataSource = sp;
+                var query = context.MonAn.Include(m => m.LoaiMonAn).AsQueryable();
 
-            // Clear và Add Binding giống y hệt bài mẫu
-            cboLoaiMonAn.DataBindings.Clear();
-            cboLoaiMonAn.DataBindings.Add("SelectedValue", bindingSource, "LoaiMonAnID", false, DataSourceUpdateMode.Never);
-
-            txtTenMonAn.DataBindings.Clear();
-            txtTenMonAn.DataBindings.Add("Text", bindingSource, "TenMonAn", false, DataSourceUpdateMode.Never);
-
-            numSoLuong.DataBindings.Clear();
-            numSoLuong.DataBindings.Add("Value", bindingSource, "SoLuong", false, DataSourceUpdateMode.Never);
-
-            numDonGia.DataBindings.Clear();
-            numDonGia.DataBindings.Add("Value", bindingSource, "DonGia", false, DataSourceUpdateMode.Never);
-
-            txtMoTa.DataBindings.Clear();
-            txtMoTa.DataBindings.Add("Text", bindingSource, "MoTa", false, DataSourceUpdateMode.Never);
-
-            picHinhAnh.DataBindings.Clear();
-            Binding hinhAnh = new Binding("Tag", bindingSource, "HinhAnh");
-            hinhAnh.Format += (s, ev) =>
-            {
-                if (ev.Value != null && !string.IsNullOrEmpty(ev.Value.ToString()))
+                if (!string.IsNullOrWhiteSpace(tuKhoa))
                 {
-                    string fullPath = Path.Combine(imagesFolder, ev.Value.ToString());
-                    if (File.Exists(fullPath))
+                    tuKhoa = tuKhoa.ToLower();
+                    query = query.Where(m => m.TenMon.ToLower().Contains(tuKhoa));
+                }
+
+                List<DanhSachMonAn> sp = query.Select(r => new DanhSachMonAn
+                {
+                    ID = r.ID,
+                    LoaiMonAnID = r.LoaiMonAnID,
+                    TenLoai = r.LoaiMonAn.TenLoai,
+                    TenMonAn = r.TenMon,
+                    SoLuong = r.SoLuong,
+                    DonGia = r.DonGia,
+                    MoTa = r.MoTa,
+                    HinhAnh = r.HinhAnh
+                })
+                .OrderBy(m => m.ID)
+                .ToList();
+
+                if (sp.Count == 0 && !string.IsNullOrWhiteSpace(tuKhoa))
+                {
+                    MessageBox.Show("Không tìm thấy món ăn nào có chứa chữ: " + tuKhoa, "Kết quả tìm kiếm", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    HienThiDuLieuLenLuoi(""); // Trả về toàn bộ danh sách
+                    return;
+                }
+
+                BindingSource bindingSource = new BindingSource();
+                bindingSource.DataSource = sp;
+
+                cboLoaiMonAn.DataBindings.Clear();
+                cboLoaiMonAn.DataBindings.Add("SelectedValue", bindingSource, "LoaiMonAnID", false, DataSourceUpdateMode.Never);
+
+                txtTenMonAn.DataBindings.Clear();
+                txtTenMonAn.DataBindings.Add("Text", bindingSource, "TenMonAn", false, DataSourceUpdateMode.Never);
+
+                numSoLuong.DataBindings.Clear();
+                numSoLuong.DataBindings.Add("Value", bindingSource, "SoLuong", false, DataSourceUpdateMode.Never);
+
+                numDonGia.DataBindings.Clear();
+                numDonGia.DataBindings.Add("Value", bindingSource, "DonGia", false, DataSourceUpdateMode.Never);
+
+                txtMoTa.DataBindings.Clear();
+                txtMoTa.DataBindings.Add("Text", bindingSource, "MoTa", false, DataSourceUpdateMode.Never);
+
+                // TỐI ƯU 1: FIX LỖI GDI+ CRASH KHI LOAD ẢNH BINDING
+                picHinhAnh.DataBindings.Clear();
+                Binding hinhAnh = new Binding("Tag", bindingSource, "HinhAnh");
+                hinhAnh.Format += (s, ev) =>
+                {
+                    // Dọn dẹp ảnh cũ trước khi load ảnh mới để chống tràn RAM
+                    if (picHinhAnh.Image != null)
                     {
-                        // Dùng FileStream để không khóa file ảnh (giúp nút Xoay Ảnh hoạt động được)
-                        using (FileStream fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read))
+                        picHinhAnh.Image.Dispose();
+                        picHinhAnh.Image = null;
+                    }
+
+                    if (ev.Value != null && !string.IsNullOrEmpty(ev.Value.ToString()))
+                    {
+                        string fullPath = Path.Combine(imagesFolder, ev.Value.ToString());
+                        if (File.Exists(fullPath))
                         {
-                            picHinhAnh.Image = Image.FromStream(fs);
+                            using (FileStream fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read))
+                            {
+                                using (Image tempImg = Image.FromStream(fs))
+                                {
+                                    picHinhAnh.Image = new Bitmap(tempImg); // Nhân bản ảnh lên RAM, an toàn tuyệt đối
+                                }
+                            }
                         }
                     }
-                    else picHinhAnh.Image = null;
-                }
-                else picHinhAnh.Image = null;
-            };
-            picHinhAnh.DataBindings.Add(hinhAnh);
+                };
+                picHinhAnh.DataBindings.Add(hinhAnh);
 
-            dataGridView.DataSource = bindingSource;
+                dataGridView.DataSource = bindingSource;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi tải dữ liệu: " + ex.Message);
+            }
         }
 
         private void btnThem_Click(object sender, EventArgs e)
         {
             xuLyThem = true;
-            BatTatChucNang(true); // Mở khóa các ô nhập liệu
+            BatTatChucNang(true);
 
-            // Xóa trắng các ô nhập liệu để chuẩn bị thêm mới
             cboLoaiMonAn.SelectedIndex = -1;
             txtTenMonAn.Clear();
             txtMoTa.Clear();
             numSoLuong.Value = 0;
             numDonGia.Value = 0;
-            picHinhAnh.Image = null;
-            picHinhAnh.Tag = null; // Cực kỳ quan trọng để reset tên ảnh
+
+            if (picHinhAnh.Image != null)
+            {
+                picHinhAnh.Image.Dispose();
+                picHinhAnh.Image = null;
+            }
+            picHinhAnh.Tag = null;
         }
 
         private void btnSua_Click(object sender, EventArgs e)
         {
-            // Kiểm tra xem người dùng đã chọn dòng nào trên lưới chưa
             if (dataGridView.CurrentRow == null) return;
-
             xuLyThem = false;
             BatTatChucNang(true);
-
-            // Lấy ID của dòng đang chọn (Lưu ý: Đảm bảo cột ID trên lưới của bạn Name là "ID")
             id = Convert.ToInt32(dataGridView.CurrentRow.Cells["ID"].Value);
         }
 
@@ -163,72 +202,100 @@ namespace QuanLyQuanAn.Forms
                     {
                         context.MonAn.Remove(sp);
                         context.SaveChanges();
+                        MessageBox.Show("Đã xóa món ăn thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
-                    frmMonAn_Load(sender, e); // Load lại Form
+                    HienThiDuLieuLenLuoi();
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    MessageBox.Show("Lỗi khi xóa: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Không thể xóa Món ăn này vì đã được sử dụng trong Hóa Đơn hoặc Công thức!", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }
         }
 
         private void btnHuyBo_Click(object sender, EventArgs e)
         {
-            frmMonAn_Load(sender, e); // Load lại Form để reset về trạng thái ban đầu
+            HienThiDuLieuLenLuoi();
+            BatTatChucNang(false);
         }
 
         private void btnLuu_Click(object sender, EventArgs e)
         {
-            // 1. Bắt lỗi người dùng nhập thiếu
-            if (string.IsNullOrWhiteSpace(cboLoaiMonAn.Text))
-                MessageBox.Show("Vui lòng chọn Loại món ăn.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            else if (string.IsNullOrWhiteSpace(txtTenMonAn.Text))
-                MessageBox.Show("Vui lòng nhập Tên món ăn.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            else if (numDonGia.Value <= 0)
-                MessageBox.Show("Đơn giá phải lớn hơn 0.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            else
+            string tenMoi = txtTenMonAn.Text.Trim();
+
+            // 1. RÀNG BUỘC CHỐT: Kiểm tra loại món ăn (Chặn trường hợp gõ chữ linh tinh không có trong danh sách)
+            if (cboLoaiMonAn.SelectedValue == null)
             {
-                try
+                MessageBox.Show("Vui lòng chọn một Loại món ăn hợp lệ từ danh sách xổ xuống!", "Yêu cầu nhập liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                cboLoaiMonAn.Focus();
+                return;
+            }
+
+            // 2. Kiểm tra tên món
+            if (string.IsNullOrWhiteSpace(tenMoi))
+            {
+                MessageBox.Show("Tên món ăn không được để trống!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                txtTenMonAn.Focus();
+                return;
+            }
+
+            // 3. Kiểm tra đơn giá
+            if (numDonGia.Value <= 0)
+            {
+                MessageBox.Show("Đơn giá phải lớn hơn 0 VNĐ.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                numDonGia.Focus();
+                return;
+            }
+
+            try
+            {
+                // Kiểm tra trùng tên món ăn (Không tính chính nó khi đang sửa)
+                bool trungTen = xuLyThem ? context.MonAn.Any(m => m.TenMon.ToLower() == tenMoi.ToLower())
+                                         : context.MonAn.Any(m => m.TenMon.ToLower() == tenMoi.ToLower() && m.ID != id);
+                if (trungTen)
                 {
-                    if (xuLyThem) // NẾU ĐANG BẤM NÚT THÊM
+                    MessageBox.Show("Tên món ăn này đã tồn tại trong thực đơn! Vui lòng kiểm tra lại.", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    txtTenMonAn.Focus();
+                    return;
+                }
+
+                if (xuLyThem)
+                {
+                    MonAn sp = new MonAn();
+                    sp.TenMon = tenMoi;
+                    sp.LoaiMonAnID = Convert.ToInt32(cboLoaiMonAn.SelectedValue);
+                    sp.SoLuong = Convert.ToInt32(numSoLuong.Value);
+                    sp.DonGia = Convert.ToInt32(numDonGia.Value);
+                    sp.MoTa = txtMoTa.Text;
+                    if (picHinhAnh.Tag != null) sp.HinhAnh = picHinhAnh.Tag.ToString();
+
+                    context.MonAn.Add(sp);
+                }
+                else
+                {
+                    MonAn sp = context.MonAn.Find(id);
+                    if (sp != null)
                     {
-                        MonAn sp = new MonAn();
-                        sp.TenMon = txtTenMonAn.Text;
+                        sp.TenMon = tenMoi;
                         sp.LoaiMonAnID = Convert.ToInt32(cboLoaiMonAn.SelectedValue);
                         sp.SoLuong = Convert.ToInt32(numSoLuong.Value);
                         sp.DonGia = Convert.ToInt32(numDonGia.Value);
                         sp.MoTa = txtMoTa.Text;
-
-                        // Lấy tên file ảnh đã được lưu tạm trong Tag
                         if (picHinhAnh.Tag != null) sp.HinhAnh = picHinhAnh.Tag.ToString();
 
-                        context.MonAn.Add(sp);
+                        context.MonAn.Update(sp);
                     }
-                    else // NẾU ĐANG BẤM NÚT SỬA
-                    {
-                        MonAn sp = context.MonAn.Find(id);
-                        if (sp != null)
-                        {
-                            sp.TenMon = txtTenMonAn.Text;
-                            sp.LoaiMonAnID = Convert.ToInt32(cboLoaiMonAn.SelectedValue);
-                            sp.SoLuong = Convert.ToInt32(numSoLuong.Value);
-                            sp.DonGia = Convert.ToInt32(numDonGia.Value);
-                            sp.MoTa = txtMoTa.Text;
-
-                            if (picHinhAnh.Tag != null) sp.HinhAnh = picHinhAnh.Tag.ToString();
-                        }
-                    }
-
-                    context.SaveChanges(); // Đẩy xuống SQL Server
-                    MessageBox.Show("Lưu dữ liệu thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    frmMonAn_Load(sender, e); // Load lại lưới cho đẹp
                 }
-                catch (Exception ex)
-                {
-                    string loi = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
-                    MessageBox.Show("Lỗi CSDL: " + loi, "Lỗi Lưu", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+
+                context.SaveChanges();
+                MessageBox.Show("Đã lưu thông tin món ăn thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                HienThiDuLieuLenLuoi();
+                BatTatChucNang(false);
+            }
+            catch (Exception ex)
+            {
+                string loi = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                MessageBox.Show("Lỗi hệ thống khi lưu: " + loi, "Lỗi CSDL", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -243,56 +310,28 @@ namespace QuanLyQuanAn.Forms
 
         private void btnTimKiem_Click(object sender, EventArgs e)
         {
-            // 1. Tạo một hộp thoại pop-up siêu nhanh bằng code
-            Form prompt = new Form()
+            using (Form prompt = new Form())
             {
-                Width = 400,
-                Height = 160,
-                FormBorderStyle = FormBorderStyle.FixedDialog,
-                Text = "Tìm kiếm món ăn",
-                StartPosition = FormStartPosition.CenterScreen,
-                MaximizeBox = false,
-                MinimizeBox = false
-            };
-            Label textLabel = new Label() { Left = 20, Top = 20, Text = "Nhập tên món ăn cần tìm:" };
-            TextBox textBox = new TextBox() { Left = 20, Top = 50, Width = 340 };
-            Button confirmation = new Button() { Text = "Tìm kiếm", Left = 260, Width = 100, Top = 80, DialogResult = DialogResult.OK };
+                prompt.Width = 400;
+                prompt.Height = 160;
+                prompt.FormBorderStyle = FormBorderStyle.FixedDialog;
+                prompt.Text = "Tìm kiếm món ăn";
+                prompt.StartPosition = FormStartPosition.CenterScreen;
+                prompt.MaximizeBox = false;
+                prompt.MinimizeBox = false;
 
-            prompt.Controls.Add(textBox);
-            prompt.Controls.Add(confirmation);
-            prompt.Controls.Add(textLabel);
-            prompt.AcceptButton = confirmation; // Nhấn Enter là tự bấm nút Tìm
+                Label textLabel = new Label() { Left = 20, Top = 20, Text = "Nhập tên món ăn cần tìm:" };
+                TextBox textBox = new TextBox() { Left = 20, Top = 50, Width = 340 };
+                Button confirmation = new Button() { Text = "Tìm kiếm", Left = 260, Width = 100, Top = 80, DialogResult = DialogResult.OK };
 
-            // 2. Hiển thị hộp thoại và chờ người dùng nhập
-            if (prompt.ShowDialog() == DialogResult.OK)
-            {
-                string tuKhoa = textBox.Text.Trim().ToLower();
+                prompt.Controls.Add(textBox);
+                prompt.Controls.Add(confirmation);
+                prompt.Controls.Add(textLabel);
+                prompt.AcceptButton = confirmation;
 
-                // 3. Lọc dữ liệu từ Database chứa từ khóa (không phân biệt hoa thường)
-                List<DanhSachMonAn> sp = context.MonAn
-                    .Where(m => m.TenMon.ToLower().Contains(tuKhoa))
-                    .Select(r => new DanhSachMonAn
-                    {
-                        ID = r.ID,
-                        LoaiMonAnID = r.LoaiMonAnID,
-                        TenLoai = r.LoaiMonAn.TenLoai,
-                        TenMonAn = r.TenMon,
-                        SoLuong = r.SoLuong,
-                        DonGia = r.DonGia,
-                        MoTa = r.MoTa,
-                        HinhAnh = r.HinhAnh
-                    }).ToList();
-
-                // 4. Đẩy kết quả tìm được lên lưới DataGridView
-                BindingSource bindingSource = new BindingSource();
-                bindingSource.DataSource = sp;
-                dataGridView.DataSource = bindingSource;
-
-                // 5. Nếu danh sách rỗng (không tìm thấy)
-                if (sp.Count == 0)
+                if (prompt.ShowDialog() == DialogResult.OK)
                 {
-                    MessageBox.Show("Không tìm thấy món ăn nào có chứa chữ: " + textBox.Text, "Kết quả tìm kiếm", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    frmMonAn_Load(sender, e); // Load lại toàn bộ danh sách
+                    HienThiDuLieuLenLuoi(textBox.Text.Trim());
                 }
             }
         }
@@ -317,28 +356,24 @@ namespace QuanLyQuanAn.Forms
 
                 try
                 {
-                    // 1. MỞ KHÓA: Hủy ảnh cũ đang hiển thị trên PictureBox (nếu có)
                     if (picHinhAnh.Image != null)
                     {
                         picHinhAnh.Image.Dispose();
                         picHinhAnh.Image = null;
                     }
-                    // Dọn rác bộ nhớ ngay lập tức để chắc chắn nhả khóa file
                     GC.Collect();
                     GC.WaitForPendingFinalizers();
 
-                    // 2. CHỐNG LỖI CHỌN TRÙNG: Chỉ copy nếu file nguồn và đích khác nhau
                     if (!sourcePath.Equals(fileSavePath, StringComparison.OrdinalIgnoreCase))
                     {
                         File.Copy(sourcePath, fileSavePath, true);
                     }
 
-                    // 3. LOAD ẢNH SIÊU AN TOÀN (Tạo bản sao lưu trên RAM)
                     using (FileStream fs = new FileStream(fileSavePath, FileMode.Open, FileAccess.Read))
                     {
                         using (Image tempImg = Image.FromStream(fs))
                         {
-                            picHinhAnh.Image = new Bitmap(tempImg); // Cắt đứt hoàn toàn với file gốc
+                            picHinhAnh.Image = new Bitmap(tempImg);
                         }
                     }
 
@@ -355,16 +390,12 @@ namespace QuanLyQuanAn.Forms
         {
             if (picHinhAnh.Image != null && picHinhAnh.Tag != null)
             {
-                // 1. Xoay hình 90 độ theo chiều kim đồng hồ ngay trên màn hình
                 picHinhAnh.Image.RotateFlip(RotateFlipType.Rotate90FlipNone);
                 picHinhAnh.Refresh();
 
-                // 2. Lưu lại file ảnh thật trong thư mục để nó nhớ góc xoay
                 try
                 {
                     string filePath = Path.Combine(imagesFolder, picHinhAnh.Tag.ToString());
-
-                    // Nếu file tồn tại, ta xóa nó đi rồi lưu bản đã xoay xuống
                     if (File.Exists(filePath))
                     {
                         File.Delete(filePath);
@@ -387,12 +418,10 @@ namespace QuanLyQuanAn.Forms
                     string path = Path.Combine(imagesFolder, e.Value.ToString());
                     if (File.Exists(path))
                     {
-                        // LOAD ẢNH LÊN LƯỚI KHÔNG KHÓA FILE
                         using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read))
                         {
                             using (Image tempImg = Image.FromStream(fs))
                             {
-                                // Thu nhỏ ảnh và nhân bản vào RAM
                                 e.Value = new Bitmap(tempImg, 40, 40);
                             }
                         }
@@ -444,30 +473,40 @@ namespace QuanLyQuanAn.Forms
 
                         if (table.Rows.Count > 0)
                         {
+                            int demThanhCong = 0;
                             foreach (DataRow r in table.Rows)
                             {
-                                MonAn ma = new MonAn();
+                                string tenExcel = table.Columns.Contains("TenMon") ? r["TenMon"].ToString().Trim() : "";
 
-                                // Dùng int.TryParse để tránh lỗi sập chương trình nếu Excel để trống ô số
-                                int loaiId = 1, soLuong = 0, donGia = 0;
+                                // TỐI ƯU 3: Chống nạp rỗng và chống nạp trùng tên món ăn từ file Excel
+                                if (!string.IsNullOrWhiteSpace(tenExcel) && !context.MonAn.Any(m => m.TenMon.ToLower() == tenExcel.ToLower()))
+                                {
+                                    MonAn ma = new MonAn();
+                                    int loaiId = 1, soLuong = 0, donGia = 0;
 
-                                if (table.Columns.Contains("LoaiMonAnID")) int.TryParse(r["LoaiMonAnID"].ToString(), out loaiId);
-                                if (table.Columns.Contains("SoLuong")) int.TryParse(r["SoLuong"].ToString(), out soLuong);
-                                if (table.Columns.Contains("DonGia")) int.TryParse(r["DonGia"].ToString(), out donGia);
+                                    if (table.Columns.Contains("LoaiMonAnID")) int.TryParse(r["LoaiMonAnID"].ToString(), out loaiId);
+                                    if (table.Columns.Contains("SoLuong")) int.TryParse(r["SoLuong"].ToString(), out soLuong);
+                                    if (table.Columns.Contains("DonGia")) int.TryParse(r["DonGia"].ToString(), out donGia);
 
-                                ma.LoaiMonAnID = loaiId;
-                                ma.TenMon = table.Columns.Contains("TenMon") ? r["TenMon"].ToString() : "";
-                                ma.SoLuong = soLuong;
-                                ma.DonGia = donGia;
-                                ma.MoTa = table.Columns.Contains("MoTa") ? r["MoTa"].ToString() : "";
-                                ma.HinhAnh = table.Columns.Contains("HinhAnh") ? r["HinhAnh"].ToString() : "";
+                                    // Ràng buộc nếu giá <= 0 thì không nạp
+                                    if (donGia > 0)
+                                    {
+                                        ma.LoaiMonAnID = loaiId;
+                                        ma.TenMon = tenExcel;
+                                        ma.SoLuong = soLuong;
+                                        ma.DonGia = donGia;
+                                        ma.MoTa = table.Columns.Contains("MoTa") ? r["MoTa"].ToString() : "";
+                                        ma.HinhAnh = table.Columns.Contains("HinhAnh") ? r["HinhAnh"].ToString() : "";
 
-                                context.MonAn.Add(ma);
+                                        context.MonAn.Add(ma);
+                                        demThanhCong++;
+                                    }
+                                }
                             }
                             context.SaveChanges();
 
-                            MessageBox.Show("Đã nhập thành công " + table.Rows.Count + " món ăn.", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            frmMonAn_Load(sender, e);
+                            MessageBox.Show($"Đã nạp thành công {demThanhCong} món ăn mới.\n(Bỏ qua các món trùng tên, lỗi giá hoặc rỗng)", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            HienThiDuLieuLenLuoi();
                         }
                     }
                 }
@@ -477,8 +516,15 @@ namespace QuanLyQuanAn.Forms
                 }
             }
         }
+
         private void btnXuat_Click(object sender, EventArgs e)
         {
+            if (dataGridView.Rows.Count == 0)
+            {
+                MessageBox.Show("Không có dữ liệu để xuất!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             SaveFileDialog saveFileDialog = new SaveFileDialog();
             saveFileDialog.Title = "Xuất danh sách món ăn ra Excel";
             saveFileDialog.Filter = "Excel Files|*.xlsx";
@@ -488,7 +534,6 @@ namespace QuanLyQuanAn.Forms
             {
                 try
                 {
-                    // Tạo DataTable để chứa dữ liệu xuất
                     DataTable table = new DataTable();
                     table.Columns.AddRange(new DataColumn[] {
                         new DataColumn("ID", typeof(int)),
@@ -500,18 +545,16 @@ namespace QuanLyQuanAn.Forms
                         new DataColumn("HinhAnh", typeof(string))
                     });
 
-                    // Lấy dữ liệu từ database
-                    var danhSach = context.MonAn.ToList();
+                    var danhSach = context.MonAn.OrderByDescending(m => m.ID).ToList();
                     foreach (var ma in danhSach)
                     {
                         table.Rows.Add(ma.ID, ma.LoaiMonAnID, ma.TenMon, ma.SoLuong, ma.DonGia, ma.MoTa, ma.HinhAnh);
                     }
 
-                    // Sử dụng ClosedXML để ghi file
                     using (XLWorkbook wb = new XLWorkbook())
                     {
                         var sheet = wb.Worksheets.Add(table, "MonAn");
-                        sheet.Columns().AdjustToContents(); // Tự động căn chỉnh độ rộng cột
+                        sheet.Columns().AdjustToContents();
                         wb.SaveAs(saveFileDialog.FileName);
 
                         MessageBox.Show("Xuất dữ liệu thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -524,19 +567,15 @@ namespace QuanLyQuanAn.Forms
             }
         }
     }
+
     public static class StringExtensions
     {
-        // 1. Hàm tạo Slug (Dùng cho tên file ảnh)
         public static string GenerateSlug(this string phrase)
         {
             if (string.IsNullOrEmpty(phrase)) return "";
 
             string str = phrase.ToLower();
-
-            // Xử lý riêng chữ đ/Đ
             str = str.Replace("đ", "d").Replace("Đ", "d");
-
-            // Bỏ dấu tiếng việt
             str = str.Normalize(System.Text.NormalizationForm.FormD);
             System.Text.StringBuilder sb = new System.Text.StringBuilder();
             foreach (char c in str)
@@ -545,20 +584,12 @@ namespace QuanLyQuanAn.Forms
                     sb.Append(c);
             }
             str = sb.ToString().Normalize(System.Text.NormalizationForm.FormC);
-
-            // Thay thế các ký tự đặc biệt, giữ lại chữ cái và số
             str = System.Text.RegularExpressions.Regex.Replace(str, @"[^a-z0-9\s-]", "");
-
-            // Thay nhiều khoảng trắng thành 1 khoảng trắng
             str = System.Text.RegularExpressions.Regex.Replace(str, @"\s+", " ").Trim();
-
-            // Đổi khoảng trắng thành dấu gạch ngang
             str = str.Replace(" ", "-");
-
             return str;
         }
 
-        // 2. Hàm bỏ dấu Tiếng Việt (Dùng cho nút Lưu Tên món ăn nếu bạn cần)
         public static string ChuyenTiengVietKhongDau(this string str)
         {
             if (string.IsNullOrEmpty(str)) return str;

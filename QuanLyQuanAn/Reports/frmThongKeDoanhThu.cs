@@ -77,6 +77,10 @@ namespace QuanLyQuanAn.Reports
             reportViewer.ZoomMode = ZoomMode.Percent;
             reportViewer.ZoomPercent = 100;
 
+            string moTa = "Hiển thị toàn bộ doanh thu của quán";
+            ReportParameter reportParameter = new ReportParameter("MoTaDoanhThu", moTa);
+            reportViewer.LocalReport.SetParameters(reportParameter);
+
             reportViewer.RefreshReport();
         }
 

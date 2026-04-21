@@ -62,7 +62,7 @@ namespace QuanLyQuanAn.Forms
                 }
 
                 // Sắp xếp nhà cung cấp mới nhất lên đầu
-                var dsNCC = query.OrderByDescending(n => n.ID).ToList();
+                var dsNCC = query.OrderBy(n => n.ID).ToList();
 
                 if (dsNCC.Count == 0 && !string.IsNullOrWhiteSpace(tuKhoa))
                 {
@@ -361,7 +361,7 @@ namespace QuanLyQuanAn.Forms
                     });
 
                     // Lấy dữ liệu mới nhất
-                    var danhSach = context.NhaCungCap.OrderByDescending(n => n.ID).ToList();
+                    var danhSach = context.NhaCungCap.OrderBy(n => n.ID).ToList();
                     foreach (var ncc in danhSach)
                     {
                         table.Rows.Add(ncc.ID, ncc.TenNCC, ncc.SoDienThoai, ncc.DiaChi);

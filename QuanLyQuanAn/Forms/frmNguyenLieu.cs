@@ -41,15 +41,12 @@ namespace QuanLyQuanAn.Forms
 
             if (cboDonViTinh.Items.Count == 0)
             {
-                cboDonViTinh.Items.AddRange(new string[] { "kg", "gram", "lít", "ml", "bó", "quả", "hộp", "chai", "gói" });
+                cboDonViTinh.Items.AddRange(new string[] { "kg", "gram", "lít", "ml", "bó", "quả", "hộp", "chai", "gói", "ổ" });
             }
 
-            HienThiDuLieuLenLuoi(); // Gọi hàm load tối ưu
+            HienThiDuLieuLenLuoi();
         }
 
-        // =========================================================
-        // TỐI ƯU 1: GỘP CHUNG HÀM LOAD DỮ LIỆU VÀ TÌM KIẾM
-        // =========================================================
         private void HienThiDuLieuLenLuoi(string tuKhoa = "")
         {
             try
@@ -64,12 +61,12 @@ namespace QuanLyQuanAn.Forms
                 }
 
                 // Sắp xếp nguyên liệu mới tạo lên trên cùng
-                var dsNguyenLieu = query.OrderByDescending(n => n.ID).ToList();
+                var dsNguyenLieu = query.OrderBy(n => n.ID).ToList();
 
                 if (dsNguyenLieu.Count == 0 && !string.IsNullOrWhiteSpace(tuKhoa))
                 {
                     MessageBox.Show("Không tìm thấy nguyên liệu nào khớp với từ khóa: " + tuKhoa, "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    HienThiDuLieuLenLuoi(""); // Trả về toàn bộ danh sách
+                    HienThiDuLieuLenLuoi("");
                     return;
                 }
 
@@ -165,6 +162,7 @@ namespace QuanLyQuanAn.Forms
         {
             string tenNLMoi = txtTenNguyenLieu.Text.Trim();
 
+            // 1. Kiểm tra rỗng Tên NL
             if (string.IsNullOrWhiteSpace(tenNLMoi))
             {
                 MessageBox.Show("Vui lòng nhập Tên nguyên liệu!", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -172,6 +170,7 @@ namespace QuanLyQuanAn.Forms
                 return;
             }
 
+            // 2. Kiểm tra rỗng Đơn vị tính
             if (string.IsNullOrWhiteSpace(cboDonViTinh.Text))
             {
                 MessageBox.Show("Vui lòng chọn hoặc nhập Đơn vị tính!", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -179,9 +178,18 @@ namespace QuanLyQuanAn.Forms
                 return;
             }
 
+            // 3. RÀNG BUỘC MỚI: Bắt lỗi Số lượng tồn (Chặn rỗng, chặn chữ copy-paste, chặn số âm)
+            int tonKho = 0;
+            if (!int.TryParse(txtSoLuongTon.Text.Trim(), out tonKho) || tonKho < 0)
+            {
+                MessageBox.Show("Số lượng tồn không hợp lệ! Vui lòng nhập số nguyên lớn hơn hoặc bằng 0.", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtSoLuongTon.Focus();
+                return;
+            }
+
             try
             {
-                // TỐI ƯU 2: Ràng buộc trùng tên Nguyên liệu
+                // Ràng buộc trùng tên Nguyên liệu
                 bool trungTen = XuLyThem ? context.NguyenLieu.Any(n => n.TenNguyenLieu.ToLower() == tenNLMoi.ToLower())
                                          : context.NguyenLieu.Any(n => n.TenNguyenLieu.ToLower() == tenNLMoi.ToLower() && n.ID != id);
                 if (trungTen)
@@ -190,10 +198,6 @@ namespace QuanLyQuanAn.Forms
                     txtTenNguyenLieu.Focus();
                     return;
                 }
-
-                // Chuyển chữ ở ô Số lượng tồn thành số để lưu
-                int tonKho = 0;
-                int.TryParse(txtSoLuongTon.Text, out tonKho);
 
                 if (XuLyThem)
                 {
@@ -240,9 +244,6 @@ namespace QuanLyQuanAn.Forms
             }
         }
 
-        // =========================================================
-        // TỐI ƯU 3: CHUYỂN SANG DÙNG POP-UP TÌM KIẾM CHO CHUẨN UX
-        // =========================================================
         private void btnTimKiem_Click(object sender, EventArgs e)
         {
             using (Form prompt = new Form())
@@ -271,14 +272,37 @@ namespace QuanLyQuanAn.Forms
             }
         }
 
-        // =========================================================
-        // TỐI ƯU 4: CHỈ CHO PHÉP NHẬP SỐ VÀO Ô SỐ LƯỢNG TỒN
-        // =========================================================
+        // CHỈ CHO PHÉP NHẬP SỐ VÀO Ô SỐ LƯỢNG TỒN (Chặn gõ tay ký tự lạ)
         private void txtSoLuongTon_KeyPress(object sender, KeyPressEventArgs e)
         {
             if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar))
             {
-                e.Handled = true; // "Bắt" phím đó lại, không cho in lên màn hình
+                e.Handled = true;
+            }
+        }
+
+        //Kiểm tra an toàn tồn kho
+        private void dataGridView_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            // Kiểm tra nếu đang ở cột Số Lượng Tồn (Cột thứ 4, index là 3)
+            if (dataGridView.Columns[e.ColumnIndex].DataPropertyName == "SoLuongTon")
+            {
+                if (e.Value != null && int.TryParse(e.Value.ToString(), out int tonKho))
+                {
+                    // Định mức an toàn là 10. Nếu dưới 10 thì tô màu đỏ cho cả dòng
+                    if (tonKho < 100)
+                    {
+                        dataGridView.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.FromArgb(255, 192, 192); // Màu đỏ nhạt
+                        dataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Red; // Chữ đỏ đậm
+                        dataGridView.Rows[e.RowIndex].DefaultCellStyle.Font = new Font(dataGridView.Font, FontStyle.Bold);
+                    }
+                    else
+                    {
+                        // Reset lại màu bình thường cho các dòng an toàn
+                        dataGridView.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.White;
+                        dataGridView.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Black;
+                    }
+                }
             }
         }
     }

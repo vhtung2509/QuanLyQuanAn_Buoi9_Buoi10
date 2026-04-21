@@ -14,6 +14,6 @@ namespace QuanLyQuanAn.Data
         public string? DiaChi { get; set; }
         public string TenDangNhap { get; set; }
         public string MatKhau { get; set; }
-        public bool Quyen { get; set; }
+        public string Quyen { get; set; }
     }
 }

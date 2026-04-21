@@ -60,47 +60,16 @@
     <ReportSection>
       <Body>
         <ReportItems>
-          <Textbox Name="Textbox1">
-            <CanGrow>true</CanGrow>
-            <KeepTogether>true</KeepTogether>
-            <Paragraphs>
-              <Paragraph>
-                <TextRuns>
-                  <TextRun>
-                    <Value>THỐNG KÊ MÓN ĂN</Value>
-                    <Style>
-                      <FontSize>20pt</FontSize>
-                      <FontWeight>Bold</FontWeight>
-                      <TextDecoration>Underline</TextDecoration>
-                    </Style>
-                  </TextRun>
-                </TextRuns>
-                <Style>
-                  <TextAlign>Center</TextAlign>
-                </Style>
-              </Paragraph>
-            </Paragraphs>
-            <rd:DefaultName>Textbox1</rd:DefaultName>
-            <Top>0cm</Top>
-            <Left>0cm</Left>
-            <Height>1.12917cm</Height>
-            <Width>17.4cm</Width>
-            <Style>
-              <Border>
-                <Style>None</Style>
-              </Border>
-              <PaddingLeft>2pt</PaddingLeft>
-              <PaddingRight>2pt</PaddingRight>
-              <PaddingTop>2pt</PaddingTop>
-              <PaddingBottom>2pt</PaddingBottom>
-            </Style>
-          </Textbox>
           <Textbox Name="Textbox2">
             <CanGrow>true</CanGrow>
             <KeepTogether>true</KeepTogether>
             <Paragraphs>
               <Paragraph>
                 <TextRuns>
+                  <TextRun>
+                    <Value xml:space="preserve">        </Value>
+                    <Style />
+                  </TextRun>
                   <TextRun>
                     <Value> ="Ngày lập: " &amp; Today()</Value>
                     <Style />
@@ -110,11 +79,10 @@
               </Paragraph>
             </Paragraphs>
             <rd:DefaultName>Textbox2</rd:DefaultName>
-            <Top>2.47481cm</Top>
-            <Left>13.0585cm</Left>
+            <Top>2.17848cm</Top>
+            <Left>11.89666cm</Left>
             <Height>0.6cm</Height>
             <Width>4.3415cm</Width>
-            <ZIndex>1</ZIndex>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -560,11 +528,11 @@
               </TablixMembers>
             </TablixRowHierarchy>
             <DataSetName>DanhSachMonAn</DataSetName>
-            <Top>3.14537cm</Top>
-            <Left>2.4cm</Left>
+            <Top>2.81376cm</Top>
+            <Left>1.23816cm</Left>
             <Height>1.2cm</Height>
             <Width>15cm</Width>
-            <ZIndex>2</ZIndex>
+            <ZIndex>1</ZIndex>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -580,6 +548,7 @@
                   <TextRun>
                     <Value>=Parameters!MoTaKetQuaLoc.Value</Value>
                     <Style>
+                      <FontSize>16pt</FontSize>
                       <FontWeight>Bold</FontWeight>
                     </Style>
                   </TextRun>
@@ -590,41 +559,11 @@
               </Paragraph>
             </Paragraphs>
             <rd:DefaultName>MoTaKetQuaLoc</rd:DefaultName>
-            <Top>1.19973cm</Top>
-            <Left>5.18583cm</Left>
-            <Height>0.6cm</Height>
-            <Width>6.71083cm</Width>
-            <ZIndex>3</ZIndex>
-            <Style>
-              <Border>
-                <Style>None</Style>
-              </Border>
-              <PaddingLeft>2pt</PaddingLeft>
-              <PaddingRight>2pt</PaddingRight>
-              <PaddingTop>2pt</PaddingTop>
-              <PaddingBottom>2pt</PaddingBottom>
-            </Style>
-          </Textbox>
-          <Textbox Name="Textbox8">
-            <CanGrow>true</CanGrow>
-            <KeepTogether>true</KeepTogether>
-            <Paragraphs>
-              <Paragraph>
-                <TextRuns>
-                  <TextRun>
-                    <Value />
-                    <Style />
-                  </TextRun>
-                </TextRuns>
-                <Style />
-              </Paragraph>
-            </Paragraphs>
-            <rd:DefaultName>Textbox8</rd:DefaultName>
-            <Top>1.19973cm</Top>
+            <Top>0cm</Top>
             <Left>0cm</Left>
-            <Height>0.6cm</Height>
-            <Width>17.4cm</Width>
-            <ZIndex>4</ZIndex>
+            <Height>0.854cm</Height>
+            <Width>16.23816cm</Width>
+            <ZIndex>2</ZIndex>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -639,7 +578,7 @@
         <Height>4.34537cm</Height>
         <Style />
       </Body>
-      <Width>17.4cm</Width>
+      <Width>16.36283cm</Width>
       <Page>
         <PageHeight>29.7cm</PageHeight>
         <PageWidth>21cm</PageWidth>

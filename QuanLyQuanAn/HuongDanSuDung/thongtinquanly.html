@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <title>Liên hệ Quản lý - Vương Hải Tùng</title>
+    <style>
+        :root {
+            --fb-color: #1877F2;
+            --ig-gradient: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+            --gmail-color: #EA4335; /* Màu đỏ Gmail */
+        }
+
+        body { 
+            background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%); 
+            min-height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* Thiết kế ngang, kích thước vừa phải */
+        .horizontal-profile-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+            max-width: 850px; 
+            width: 100%;
+            margin: auto;
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        /* Phần bên trái: Thông tin cá nhân */
+        .profile-info-section {
+            padding: 40px;
+        }
+
+        .main-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 15px; 
+            object-fit: cover;
+            border: 3px solid #f8f9fa;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .name { font-weight: 800; font-size: 1.8rem; color: #1a1a1a; margin-bottom: 2px; }
+        .title { color: #718096; font-size: 0.95rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 30px; }
+
+        /* Nút liên hệ dọc */
+        .contact-links-list { display: flex; flex-direction: column; gap: 12px; max-width: 320px; }
+        .btn-contact {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            color: white !important;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+        .btn-contact:hover { transform: translateX(5px); opacity: 0.9; }
+        .btn-contact i { font-size: 1.2rem; margin-right: 15px; }
+
+        .btn-phone { background-color: #22c55e; } 
+        .btn-facebook { background-color: var(--fb-color); }
+        .btn-instagram { background: var(--ig-gradient); }
+        .btn-gmail { background-color: var(--gmail-color); }
+
+        /* Phần bên phải: Mã QR Zalo */
+        .qr-section {
+            background-color: #f8fafc;
+            padding: 40px;
+            text-align: center;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-left: 1px solid #edf2f7;
+        }
+
+        .qr-header { font-size: 0.85rem; font-weight: 700; color: #0068ff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; }
+        .qr-img {
+            width: 150px;
+            height: 150px;
+            border-radius: 12px;
+            padding: 10px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        /* Footer */
+        .footer-text { font-size: 0.75rem; color: #a0aec0; padding: 15px 40px; background-color: #f1f5f9; border-top: 1px solid #edf2f7; }
+
+        /* Responsive cho điện thoại */
+        @media (max-width: 768px) {
+            .qr-section { border-left: none; border-top: 1px solid #edf2f7; padding: 30px; }
+            .profile-info-section { padding: 30px; text-align: center; }
+            .d-flex-mobile { display: flex; flex-direction: column; align-items: center; }
+            .main-avatar { margin-bottom: 15px; margin-right: 0 !important; }
+            .contact-links-list { margin: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="horizontal-profile-card shadow-lg">
+        <div class="row g-0 align-items-center">
+            
+            <div class="col-md-7 profile-info-section">
+                <div class="d-flex align-items-center mb-3 d-flex-mobile">
+                    <img src="../Images/avatar.jpg" alt="Vương Hải Tùng" class="main-avatar me-4 shadow">
+                    <div>
+                        <h2 class="name">VƯƠNG HẢI TÙNG</h2>
+                        <p class="title mb-0">Developer & Admin System</p>
+                    </div>
+                </div>
+
+                <div class="contact-links-list mt-4">
+                    <a href="tel:0914965676" class="btn-contact btn-phone shadow-sm">
+                        <i class="bi bi-telephone-outbound-fill"></i> 0914 965 676
+                    </a>
+
+                    <a href="mailto:haitungvuong@gmail.com" class="btn-contact btn-gmail shadow-sm">
+                        <i class="bi bi-envelope-at-fill"></i> haitungvuong@gmail.com
+                    </a>
+
+                    <a href="https://www.facebook.com/share/1CSvo4RMxU/" target="_blank" class="btn-contact btn-facebook shadow-sm">
+                        <i class="bi bi-facebook"></i> Facebook cá nhân
+                    </a>
+
+                    <a href="https://www.instagram.com/htungg.2509_/" target="_blank" class="btn-contact btn-instagram shadow-sm">
+                        <i class="bi bi-instagram"></i> Instagram (@htungg.2509_)
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-md-5 qr-section">
+                <div class="qr-header">QUÉT MÃ ZALO HỖ TRỢ</div>
+                <img src="../Images/qrzalo.jpg" alt="Zalo QR Tùng Vương" class="qr-img mb-2 shadow-sm">
+                <p class="x-small text-muted mb-0 mt-2">SĐT liên hệ: (0914965676)</p>
+                <p class="x-small text-muted mb-0">Hỗ trợ kỹ thuật phần mềm Quản lý Quán ăn</p>
+            </div>
+
+        </div>
+
+        <div class="footer-text text-center text-md-start">
+             Hỗ trợ đồ án Quản lý Quán ăn - Vương Hải Tùng © 2026.
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
